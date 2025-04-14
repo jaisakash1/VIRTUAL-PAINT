@@ -4,7 +4,9 @@ import numpy as np
 import time
 import os
 
-app = Flask(__name__, template_folder='my_html')
+import os
+dir_path = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(dir_path, '../my_html'))
 myColors = [
     [105, 180, 50, 130, 255, 255],     # Blue (Updated)
     [0, 150, 120, 10, 255, 255],       # Red
@@ -116,5 +118,5 @@ def snapshot():
         return send_file(filename, mimetype='image/png')
     return "Snapshot failed"
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     app.run(debug=True)

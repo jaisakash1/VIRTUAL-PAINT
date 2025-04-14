@@ -5,28 +5,34 @@ import time
 import os
 
 app = Flask(__name__, template_folder='my_html')
+
+# Define color ranges (HSV format) and corresponding BGR values
 myColors = [
-    [105, 180, 50, 130, 255, 255],     # Blue (Updated)
-    [0, 150, 120, 10, 255, 255],       # Red
-    [50, 100, 100, 80, 255, 255],      # Green
-    [10, 150, 120, 25, 255, 255],      # Orange
-    [40, 70, 70, 80, 255, 255]         # Light Green
+    [105, 180, 50, 130, 255, 255],  # Blue
+    [0, 150, 120, 10, 255, 255],    # Red
+    [50, 100, 100, 80, 255, 255],   # Green
+    [10, 150, 120, 25, 255, 255],   # Orange
+    [40, 70, 70, 80, 255, 255]      # Light Green
 ]
 myColorValues = [
-    [177,77,9],           # Blue
-    [0, 0, 255],           # Red
-    [0, 255, 0],           # Green
-    [0, 140, 255],         # Orange
-    [144, 238, 144]        # Light Green (NEW)
+    [177, 77, 9],   # Blue
+    [0, 0, 255],    # Red
+    [0, 255, 0],    # Green
+    [0, 140, 255],  # Orange
+    [144, 238, 144] # Light Green
 ]
-
 
 myPoints = []
 brushThickness = 10
 cap = cv2.VideoCapture(0)
 
+# Check if webcam is working
+if not cap.isOpened():
+    print("Error: Could not access the webcam.")
+
 def getContours(img):
     contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # print(f"Contours found: {len(contours)}")  # Debugging line
     x = y = 0
     for cnt in contours:
         area = cv2.contourArea(cnt)
@@ -42,6 +48,10 @@ def findColor(img):
         lower = np.array(color[0:3])
         upper = np.array(color[3:6])
         mask = cv2.inRange(imgHSV, lower, upper)
+
+        # Debug: Show the mask for each color detection
+        cv2.imshow(f"Mask {i}", mask)
+
         x, y = getContours(mask)
         if x != 0 and y != 0:
             newPoints.append([x, y, i])
@@ -58,7 +68,7 @@ def generate_frames():
         success, frame = cap.read()
         if not success:
             break
-        frame = cv2.flip(frame, 1)
+        frame = cv2.flip(frame, 1)  # Flip the frame to mirror the video
         newPoints = findColor(frame)
         if newPoints:
             myPoints.extend(newPoints)
@@ -66,6 +76,7 @@ def generate_frames():
 
         cv2.putText(frame, f'Brush: {brushThickness}px', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2)
 
+        # Encode the frame in JPEG format for streaming
         _, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
         yield (b'--frame\r\n'
@@ -77,7 +88,13 @@ def index():
 
 @app.route('/video')
 def video():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    try:
+        return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    except Exception as e:
+        print(f"Error while streaming video: {e}")
+
+
+        return "Error while streaming video"
 
 @app.route('/clear')
 def clear():
@@ -88,6 +105,7 @@ def clear():
 def set_brush():
     global brushThickness
     brushThickness = int(request.args.get('size', 10))
+    print(f"Brush size updated to: {brushThickness}")  # Debugging line
     return "Brush size updated"
 
 @app.route('/custom_color')

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Virtual Paint - Web</title>
+  <style>
+    body { text-align: center; font-family: 'Segoe UI', sans-serif; background: #f7f7f7; }
+    video, img { border: 4px solid #444; border-radius: 10px; margin-top: 10px; }
+    button, input[type="range"] {
+      margin: 10px; padding: 10px 20px;
+      font-size: 16px; border-radius: 8px;
+      border: none; background: #007bff; color: white;
+      cursor: pointer;
+    }
+    button:hover, input[type="range"]:hover { opacity: 0.85; }
+    .controls { margin-top: 20px; }
+    input[type="color"] { height: 40px; width: 60px; border: none; }
+  </style>
+</head>
+<body>
+  <h1>🎨 Virtual Paint Web App</h1>
+  <img src="{{ url_for('video') }}" width="640" height="480" id="videoFeed" />
+
+  <div class="controls">
+    <label for="brushSize">🖌️ Brush Size:</label>
+    <input type="range" id="brushSize" min="5" max="50" value="10" oninput="updateBrushSize(this.value)">
+    <span id="sizeVal">10</span>
+    <br><br>
+
+    <label for="colorPicker">🎨 Color:</label>
+    <input type="color" id="colorPicker" onchange="setColor(this.value)">
+
+    <button onclick="clearCanvas()">🧹 Clear</button>
+    <button onclick="saveImage()">📸 Snapshot</button>
+    <button onclick="setEraser()">🧽 Eraser</button>
+  </div>
+
+  <script>
+    let isDrawing = false;
+    let x = 0, y = 0;
+    
+   
+    document.getElementById('videoFeed').addEventListener('mousedown', function(event) {
+      isDrawing = true;
+      x = event.offsetX;
+      y = event.offsetY;
+    });
+
+    document.getElementById('videoFeed').addEventListener('mousemove', function(event) {
+      if (isDrawing) {
+        let newX = event.offsetX;
+        let newY = event.offsetY;
+        drawLine(x, y, newX, newY);
+        x = newX;
+        y = newY;
+      }
+    });
+
+   
+    document.getElementById('videoFeed').addEventListener('mouseup', function() {
+      isDrawing = false;
+    });
+
+    function drawLine(x1, y1, x2, y2) {
+      fetch(`/set_brush?size=${document.getElementById('brushSize').value}`);
+      fetch(`/custom_color?hex=${document.getElementById('colorPicker').value.slice(1)}`);
+     
+    }
+
+    function updateBrushSize(val) {
+      document.getElementById('sizeVal').innerText = val;
+      fetch(`/set_brush?size=${val}`);
+    }
+
+    function clearCanvas() {
+      fetch('/clear').then(() => alert("Canvas cleared"));
+    }
+
+    function saveImage() {
+      window.open('/snapshot', '_blank');
+    }
+
+    function setColor(hex) {
+      fetch(`/custom_color?hex=${hex.replace('#', '')}`);
+    }
+
+    function setEraser() {
+      fetch('/set_eraser').then(() => alert("Eraser Mode ON"));
+    }
+  </script>
+</body>
+</html>

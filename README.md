@@ -17,4 +17,4 @@ This is a fun virtual painting app using color detection with OpenCV. No brushes
 - Python
 - OpenCV
 - Flask
-- HTML + CSS (for frontend)
+- HTML + CSS
